@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HRX Loom — capability demo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%230b0e13'/%3E%3Cpath d='M2 3h8L2 11z M14 13H6l8-8z' fill='%2300c2de'/%3E%3C/svg%3E">
 <style>
 /* HRX Loom capability demo.
    NOTE: there is no AMD web design-system skill installed (only amd-pptx-template,
@@ -46,11 +47,15 @@ code{font-family:var(--mono);font-size:.88em;color:var(--accent-2);
 em{color:var(--ink);font-style:italic}
 
 /* ---------- provenance bar ---------- */
+/* One left edge for everything: a 1280px column with 20px gutters. */
 .prov-bar{
   position:sticky;top:0;z-index:50;
-  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-  padding:7px 20px;font-size:12.5px;
+  padding:7px 0;font-size:12.5px;
   background:var(--bg-2);border-bottom:1px solid var(--line);
+}
+.prov-inner{
+  max-width:1280px;margin:0 auto;padding:0 20px;
+  display:flex;align-items:center;gap:4px 12px;flex-wrap:wrap;
 }
 .prov-mode{
   font-family:var(--mono);font-weight:600;font-size:11px;letter-spacing:.09em;
@@ -59,15 +64,15 @@ em{color:var(--ink);font-style:italic}
 }
 .prov-bar.is-live .prov-mode{background:var(--good);color:#00241a}
 .prov-text{color:var(--ink-2)}
-.prov-spacer{flex:1}
-.prov-note{color:var(--ink-3);font-style:italic}
+.prov-text{flex:1;min-width:0}
+.prov-note{flex-basis:100%;color:var(--ink-3);font-style:italic;font-size:11.5px}
 
 /* ---------- masthead ---------- */
 .masthead{
-  padding:26px 20px 0;border-bottom:1px solid var(--line);
+  padding:26px 0 0;border-bottom:1px solid var(--line);
   background:linear-gradient(180deg,var(--bg-2),var(--bg));
 }
-.brand{display:flex;align-items:center;gap:14px;max-width:1280px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:14px;max-width:1280px;margin:0 auto;padding:0 20px}
 .brand-mark{
   font-size:26px;color:var(--accent);letter-spacing:-4px;
   font-family:var(--mono);line-height:1;
@@ -75,7 +80,7 @@ em{color:var(--ink);font-style:italic}
 .brand h1{margin:0;font-size:22px;letter-spacing:-.02em;font-weight:600}
 .brand p{margin:2px 0 0;color:var(--ink-2);font-size:13.5px}
 
-.tabs{display:flex;gap:2px;max-width:1280px;margin:20px auto 0;flex-wrap:wrap}
+.tabs{display:flex;gap:2px;max-width:1280px;margin:20px auto 0;padding:0 20px;flex-wrap:wrap}
 .tab{
   appearance:none;border:1px solid var(--line);border-bottom:none;
   background:transparent;color:var(--ink-3);
@@ -218,18 +223,36 @@ select,input[type=number]{
 
 /* ---------- charts ---------- */
 .chart{padding:16px;overflow-x:auto}
-.chart svg{display:block;min-width:620px;width:100%}
+.chart svg{display:block;width:100%}
 .ax-line{stroke:var(--line);stroke-width:1}
 .ax-par{stroke:var(--accent);stroke-width:1;stroke-dasharray:3 3;opacity:.55}
 .ax-txt{fill:var(--ink-3);font-family:var(--mono);font-size:10.5px}
 .row-lbl{fill:var(--ink-2);font-family:var(--mono);font-size:11.5px}
+.chart svg.narrow .row-lbl{font-size:10px}
+.chart svg.narrow .ax-txt{font-size:9.5px}
 .dot{fill:var(--accent);opacity:.62}
 .dot.slow{fill:none;stroke:var(--bad);stroke-width:1.3;opacity:.85}
 .med-tick{stroke:var(--ink);stroke-width:2}
 .band{fill:var(--bad);opacity:.05}
 
 /* ---------- board ---------- */
-.board-wrap{max-height:430px;overflow-y:auto;margin:0 16px}
+.board-wrap{max-height:430px;overflow:auto;margin:0 16px}
+.board-wrap.has-more{
+  -webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 36px),transparent);
+          mask-image:linear-gradient(180deg,#000 calc(100% - 36px),transparent);
+}
+.board-hint{margin:8px 16px 0;font-size:11px;color:var(--ink-3);font-family:var(--mono)}
+@media(max-width:620px){
+  .chart{padding:12px 8px}
+  .board{font-size:12px}
+  .board th:nth-child(4),.board td:nth-child(4),
+  .board th:nth-child(5),.board td:nth-child(5){display:none}   /* p32k, decode: both in the chart */
+  .board td,.board th{padding:7px 4px}
+  .board th{letter-spacing:0;font-size:9.5px}
+  .board .rk{display:none}   /* rank order is still the row order */
+  .board .nm{overflow-wrap:anywhere}
+  .board-wrap{margin:0 10px}
+}
 .board{width:100%;border-collapse:collapse;font-size:12.8px}
 .board th{
   position:sticky;top:0;background:var(--panel-2);text-align:left;
@@ -268,6 +291,8 @@ select,input[type=number]{
 .live-result td:first-child{color:var(--ink-3)}
 .live-result td:last-child{font-family:var(--mono);text-align:right}
 .live-err{color:var(--bad);font-size:12.5px}
+.live-empty{margin:0;padding:22px 12px;text-align:center;color:var(--ink-3);font-size:12.5px;
+  border:1px dashed var(--line-2);border-radius:5px}
 
 /* ---------- compare / gates / gaps ---------- */
 .cmp{margin:14px 16px;padding:0;list-style:none}
@@ -306,10 +331,11 @@ footer{
 <body>
 
 <div id="provenanceBar" class="prov-bar">
-  <span class="prov-mode" id="provMode">checking…</span>
-  <span class="prov-text" id="provText">Determining whether a loom-serve is reachable…</span>
-  <span class="prov-spacer"></span>
-  <span class="prov-note">Standalone build, no backend — Illustrative interface built for this demo — not an AMD product screen.</span>
+  <div class="prov-inner">
+    <span class="prov-mode" id="provMode">checking…</span>
+    <span class="prov-text" id="provText">Determining whether a loom-serve is reachable…</span>
+    <span class="prov-note">Standalone build, no backend — Illustrative interface built for this demo — not an AMD product screen.</span>
+  </div>
 </div>
 
 <header class="masthead">
@@ -493,11 +519,12 @@ footer{
   <div class="grid-2">
     <div class="panel">
       <div class="panel-head"><span>leaderboard</span><span class="faint">geometric mean across 9 workloads · ranked only with full coverage</span></div>
-      <div class="board-wrap"><table class="board" id="board"></table></div>
+      <div class="board-wrap" id="boardWrap"><table class="board" id="board"></table></div>
+      <p class="board-hint" id="boardHint"></p>
     </div>
 
     <div class="panel live-panel">
-      <div class="panel-head"><span>measure on this box</span><span id="liveBadge" class="badge">replay</span></div>
+      <div class="panel-head"><span>measure on the demo host</span><span id="liveBadge" class="badge">replay</span></div>
       <p class="panel-lede" id="livePanelLede">
         No <code>loom-serve</code> is answering, so there is nothing to measure here.
         Everything above is published AMD data, not a local reading.
@@ -508,7 +535,7 @@ footer{
         <label>max out <input type="number" id="pMax" value="128" min="16" max="2048" step="16"></label>
         <button id="probeBtn" class="btn" disabled>run measurement</button>
       </div>
-      <div id="liveResult" class="live-result"></div>
+      <div id="liveResult" class="live-result"><p class="live-empty">Results appear here after a run.</p></div>
       <p class="caveat">Live figures are end-to-end and non-streamed: an average output rate over
         the whole response, <b>not</b> a time-to-first-token or steady-state decode rate. They are
         not directly comparable to the catalog's prefill/decode split above.</p>
@@ -657,7 +684,7 @@ $$(".tab").forEach((t) => {
     $("#screen-" + t.dataset.screen).classList.add("is-active");
     // The strip chart sizes to its container, which is zero-width while the
     // screen is display:none - so draw it only once the screen is visible.
-    if (t.dataset.screen === "evidence") drawStrip();
+    if (t.dataset.screen === "evidence") { drawStrip(); sizeBoard(); }
   });
 });
 
@@ -694,6 +721,17 @@ async function boot() {
 }
 
 /* ---------------- provenance bar ---------------- */
+/* The URL is resolved by the backend, so a loopback address means "this box",
+   not the viewer's machine. Say so, or a LAN viewer reads 127.0.0.1 as theirs. */
+function serverLabel(url) {
+  try {
+    const u = new URL(url);
+    if (["127.0.0.1", "localhost", "[::1]", "::1"].includes(u.hostname))
+      return `loom-serve on the demo host (:${u.port || (u.protocol === "https:" ? 443 : 80)})`;
+  } catch (e) { /* not a URL, e.g. the standalone placeholder */ }
+  return url;
+}
+
 function renderProvenance() {
   const bar = $("#provenanceBar");
   const live = STATUS.mode === "live";
@@ -702,19 +740,25 @@ function renderProvenance() {
 
   if (live) {
     $("#provText").innerHTML =
-      `Connected to <code>${STATUS.loom_serve_url}</code> hosting ` +
+      `Connected to <code title="${STATUS.loom_serve_url}">${serverLabel(STATUS.loom_serve_url)}</code> hosting ` +
       `<b>${(STATUS.server_models || []).join(", ") || "—"}</b>. ` +
-      `Measurements you trigger are real readings from this box; ` +
+      `Measurements you trigger are real readings from the demo host; ` +
       `catalog figures remain published AMD data.`;
     $("#liveBadge").textContent = "live";
     $("#liveBadge").classList.add("live");
     $("#probeBtn").disabled = false;
     $("#livePanelLede").innerHTML =
-      `A <code>loom-serve</code> is answering on <code>${STATUS.loom_serve_url}</code>. ` +
-      `Running a measurement sends real requests and reports what this machine did.`;
+      `<code title="${STATUS.loom_serve_url}">${serverLabel(STATUS.loom_serve_url)}</code> is answering. ` +
+      `Running a measurement sends real requests and reports what that machine did.`;
+    if (STATUS.last_probe && STATUS.last_probe.mode === "live")
+      renderProbe(STATUS.last_probe, "Last measurement on the demo host, before this page loaded.");
+    else
+      $("#liveResult").innerHTML =
+        `<p class="live-empty">Results appear here after a run: requests, failures, wall time, ` +
+        `latency p50/p99 and output rate.</p>`;
   } else {
     $("#provText").innerHTML =
-      `No <code>loom-serve</code> on <code>${STATUS.loom_serve_url}</code>` +
+      `No <code>loom-serve</code> on <code title="${STATUS.loom_serve_url}">${serverLabel(STATUS.loom_serve_url)}</code>` +
       (STATUS.reason ? ` (${STATUS.reason})` : "") +
       `. Every figure shown is <b>published loom-fun data</b> from ` +
       `${CATALOG.generated} — nothing here was measured on this machine.`;
@@ -795,9 +839,13 @@ function renderStats() {
 function drawStrip() {
   if (!CATALOG) return;
   const host = $("#stripChart");
-  const W = Math.max(host.clientWidth || 860, 620);
+  // Fit the container (minus its padding) so the whole 0.5-3.5x range is visible on a phone.
+  const cs = getComputedStyle(host);
+  const inner = (host.clientWidth || 892) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const W = Math.max(inner, 300);
+  const narrow = W < 560;
   const rows = CATALOG.workloads;
-  const rowH = 34, padT = 24, padB = 30, padL = 96, padR = 24;
+  const rowH = 34, padT = 24, padB = 30, padL = narrow ? 84 : 96, padR = narrow ? 14 : 24;
   const H = padT + rows.length * rowH + padB;
   const plotW = W - padL - padR;
 
@@ -809,11 +857,11 @@ function drawStrip() {
     return padL + t * plotW;
   };
 
-  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Speedup by workload">`;
+  let svg = `<svg class="${narrow ? "narrow" : ""}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Speedup by workload">`;
   // Region where llama.cpp is faster.
   svg += `<rect class="band" x="${padL}" y="${padT - 8}" width="${x(1) - padL}" height="${rows.length * rowH + 8}"/>`;
 
-  [0.5, 0.75, 1, 1.5, 2, 3].forEach((t) => {
+  (narrow ? [0.5, 1, 2, 3] : [0.5, 0.75, 1, 1.5, 2, 3]).forEach((t) => {
     const px = x(t);
     svg += `<line class="${t === 1 ? "ax-par" : "ax-line"}" x1="${px}" y1="${padT - 8}" x2="${px}" y2="${padT + rows.length * rowH}"/>`;
     svg += `<text class="ax-txt" x="${px}" y="${H - 12}" text-anchor="middle">${t}×</text>`;
@@ -845,7 +893,7 @@ function drawStrip() {
 }
 
 window.addEventListener("resize", () => {
-  if ($("#screen-evidence").classList.contains("is-active")) drawStrip();
+  if ($("#screen-evidence").classList.contains("is-active")) { drawStrip(); sizeBoard(); }
 });
 
 /* ---------------- 03 leaderboard ---------------- */
@@ -880,6 +928,26 @@ function renderBoard() {
   }).join("");
 
   $("#board").innerHTML = head + rows;
+  sizeBoard();
+}
+
+/* Show whole rows only, and say that the table scrolls. Runs when the
+   Evidence screen is visible, because hidden rows measure as zero height. */
+function sizeBoard() {
+  const wrap = $("#boardWrap");
+  const trs = $$("#board tr");
+  if (!wrap || trs.length < 2 || !trs[1].offsetHeight) return;
+  const VISIBLE = 11;
+  const headH = trs[0].offsetHeight, rowH = trs[1].offsetHeight;
+  const body = trs.length - 1;
+  wrap.style.maxHeight = body > VISIBLE ? `${headH + rowH * VISIBLE}px` : "";
+  const update = () => {
+    const atEnd = wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 2;
+    wrap.classList.toggle("has-more", body > VISIBLE && !atEnd);
+  };
+  wrap.onscroll = update;
+  update();
+  $("#boardHint").textContent = body > VISIBLE ? `${body} rows · scroll for more` : "";
 }
 
 /* ---------------- 04 gates ---------------- */
@@ -951,10 +1019,21 @@ $("#probeBtn").addEventListener("click", async () => {
     const d = await r.json();
 
     if (d.mode !== "live") {
-      out.innerHTML = `<p class="live-err">Server not reachable${d.reason ? ` (${d.reason})` : ""}. ` +
-                      `Nothing measured — staying in replay.</p>`;
+      out.innerHTML = `<p class="live-err">${d.error ? d.error : `Server not reachable${d.reason ? ` (${d.reason})` : ""}. ` +
+                      `Nothing measured — staying in replay.`}</p>`;
     } else {
-      out.innerHTML = `<table>
+      renderProbe(d, "Measured on the demo host just now.");
+    }
+  } catch (e) {
+    out.innerHTML = `<p class="live-err">${e.message}</p>`;
+  } finally {
+    btn.disabled = STATUS.mode !== "live";
+    btn.textContent = "run measurement";
+  }
+});
+
+function renderProbe(d, when) {
+      $("#liveResult").innerHTML = `<table>
         <tr><td>model</td><td>${d.model}</td></tr>
         <tr><td>requests (concurrency)</td><td>${d.requests} (${d.concurrency} / cap ${d.max_workers})</td></tr>
         <tr><td>failed</td><td>${d.failed}</td></tr>
@@ -964,15 +1043,8 @@ $("#probeBtn").addEventListener("click", async () => {
         <tr><td>mean output rate</td><td>${d.mean_output_tok_s === null ? "—" : d.mean_output_tok_s + " tok/s"}</td></tr>
         <tr><td>aggregate output rate</td><td>${d.aggregate_output_tok_s === null ? "—" : d.aggregate_output_tok_s + " tok/s"}</td></tr>
       </table>
-      <p class="caveat" style="margin-left:0;margin-right:0">Measured on this machine just now. ${d.measurement_note}</p>`;
-    }
-  } catch (e) {
-    out.innerHTML = `<p class="live-err">${e.message}</p>`;
-  } finally {
-    btn.disabled = STATUS.mode !== "live";
-    btn.textContent = "run measurement";
-  }
-});
+      <p class="caveat" style="margin-left:0;margin-right:0">${when} ${d.measurement_note || ""}</p>`;
+}
 
 boot();
 

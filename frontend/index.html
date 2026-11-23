@@ -4,15 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HRX Loom — capability demo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%230b0e13'/%3E%3Cpath d='M2 3h8L2 11z M14 13H6l8-8z' fill='%2300c2de'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <div id="provenanceBar" class="prov-bar">
-  <span class="prov-mode" id="provMode">checking…</span>
-  <span class="prov-text" id="provText">Determining whether a loom-serve is reachable…</span>
-  <span class="prov-spacer"></span>
-  <span class="prov-note">Illustrative interface built for this demo — not an AMD product screen.</span>
+  <div class="prov-inner">
+    <span class="prov-mode" id="provMode">checking…</span>
+    <span class="prov-text" id="provText">Determining whether a loom-serve is reachable…</span>
+    <span class="prov-note">Illustrative interface built for this demo — not an AMD product screen.</span>
+  </div>
 </div>
 
 <header class="masthead">
@@ -196,11 +198,12 @@
   <div class="grid-2">
     <div class="panel">
       <div class="panel-head"><span>leaderboard</span><span class="faint">geometric mean across 9 workloads · ranked only with full coverage</span></div>
-      <div class="board-wrap"><table class="board" id="board"></table></div>
+      <div class="board-wrap" id="boardWrap"><table class="board" id="board"></table></div>
+      <p class="board-hint" id="boardHint"></p>
     </div>
 
     <div class="panel live-panel">
-      <div class="panel-head"><span>measure on this box</span><span id="liveBadge" class="badge">replay</span></div>
+      <div class="panel-head"><span>measure on the demo host</span><span id="liveBadge" class="badge">replay</span></div>
       <p class="panel-lede" id="livePanelLede">
         No <code>loom-serve</code> is answering, so there is nothing to measure here.
         Everything above is published AMD data, not a local reading.
@@ -211,7 +214,7 @@
         <label>max out <input type="number" id="pMax" value="128" min="16" max="2048" step="16"></label>
         <button id="probeBtn" class="btn" disabled>run measurement</button>
       </div>
-      <div id="liveResult" class="live-result"></div>
+      <div id="liveResult" class="live-result"><p class="live-empty">Results appear here after a run.</p></div>
       <p class="caveat">Live figures are end-to-end and non-streamed: an average output rate over
         the whole response, <b>not</b> a time-to-first-token or steady-state decode rate. They are
         not directly comparable to the catalog's prefill/decode split above.</p>

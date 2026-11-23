@@ -52,7 +52,7 @@ source ~/loom/.venv/bin/activate
 LOOM_SERVE_URL=http://127.0.0.1:8080 python3 app.py
 ```
 
-The provenance bar flips to **live** and the "measure on this box" panel
+The provenance bar flips to **live** and the "measure on the demo host" panel
 unlocks. Published catalog numbers stay on screen but stay labelled published.
 
 ---

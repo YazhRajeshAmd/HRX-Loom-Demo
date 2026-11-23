@@ -55,7 +55,7 @@ $$(".tab").forEach((t) => {
     $("#screen-" + t.dataset.screen).classList.add("is-active");
     // The strip chart sizes to its container, which is zero-width while the
     // screen is display:none - so draw it only once the screen is visible.
-    if (t.dataset.screen === "evidence") drawStrip();
+    if (t.dataset.screen === "evidence") { drawStrip(); sizeBoard(); }
   });
 });
 
@@ -92,6 +92,17 @@ async function boot() {
 }
 
 /* ---------------- provenance bar ---------------- */
+/* The URL is resolved by the backend, so a loopback address means "this box",
+   not the viewer's machine. Say so, or a LAN viewer reads 127.0.0.1 as theirs. */
+function serverLabel(url) {
+  try {
+    const u = new URL(url);
+    if (["127.0.0.1", "localhost", "[::1]", "::1"].includes(u.hostname))
+      return `loom-serve on the demo host (:${u.port || (u.protocol === "https:" ? 443 : 80)})`;
+  } catch (e) { /* not a URL, e.g. the standalone placeholder */ }
+  return url;
+}
+
 function renderProvenance() {
   const bar = $("#provenanceBar");
   const live = STATUS.mode === "live";
@@ -100,19 +111,25 @@ function renderProvenance() {
 
   if (live) {
     $("#provText").innerHTML =
-      `Connected to <code>${STATUS.loom_serve_url}</code> hosting ` +
+      `Connected to <code title="${STATUS.loom_serve_url}">${serverLabel(STATUS.loom_serve_url)}</code> hosting ` +
       `<b>${(STATUS.server_models || []).join(", ") || "—"}</b>. ` +
-      `Measurements you trigger are real readings from this box; ` +
+      `Measurements you trigger are real readings from the demo host; ` +
       `catalog figures remain published AMD data.`;
     $("#liveBadge").textContent = "live";
     $("#liveBadge").classList.add("live");
     $("#probeBtn").disabled = false;
     $("#livePanelLede").innerHTML =
-      `A <code>loom-serve</code> is answering on <code>${STATUS.loom_serve_url}</code>. ` +
-      `Running a measurement sends real requests and reports what this machine did.`;
+      `<code title="${STATUS.loom_serve_url}">${serverLabel(STATUS.loom_serve_url)}</code> is answering. ` +
+      `Running a measurement sends real requests and reports what that machine did.`;
+    if (STATUS.last_probe && STATUS.last_probe.mode === "live")
+      renderProbe(STATUS.last_probe, "Last measurement on the demo host, before this page loaded.");
+    else
+      $("#liveResult").innerHTML =
+        `<p class="live-empty">Results appear here after a run: requests, failures, wall time, ` +
+        `latency p50/p99 and output rate.</p>`;
   } else {
     $("#provText").innerHTML =
-      `No <code>loom-serve</code> on <code>${STATUS.loom_serve_url}</code>` +
+      `No <code>loom-serve</code> on <code title="${STATUS.loom_serve_url}">${serverLabel(STATUS.loom_serve_url)}</code>` +
       (STATUS.reason ? ` (${STATUS.reason})` : "") +
       `. Every figure shown is <b>published loom-fun data</b> from ` +
       `${CATALOG.generated} — nothing here was measured on this machine.`;
@@ -193,9 +210,13 @@ function renderStats() {
 function drawStrip() {
   if (!CATALOG) return;
   const host = $("#stripChart");
-  const W = Math.max(host.clientWidth || 860, 620);
+  // Fit the container (minus its padding) so the whole 0.5-3.5x range is visible on a phone.
+  const cs = getComputedStyle(host);
+  const inner = (host.clientWidth || 892) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const W = Math.max(inner, 300);
+  const narrow = W < 560;
   const rows = CATALOG.workloads;
-  const rowH = 34, padT = 24, padB = 30, padL = 96, padR = 24;
+  const rowH = 34, padT = 24, padB = 30, padL = narrow ? 84 : 96, padR = narrow ? 14 : 24;
   const H = padT + rows.length * rowH + padB;
   const plotW = W - padL - padR;
 
@@ -207,11 +228,11 @@ function drawStrip() {
     return padL + t * plotW;
   };
 
-  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Speedup by workload">`;
+  let svg = `<svg class="${narrow ? "narrow" : ""}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Speedup by workload">`;
   // Region where llama.cpp is faster.
   svg += `<rect class="band" x="${padL}" y="${padT - 8}" width="${x(1) - padL}" height="${rows.length * rowH + 8}"/>`;
 
-  [0.5, 0.75, 1, 1.5, 2, 3].forEach((t) => {
+  (narrow ? [0.5, 1, 2, 3] : [0.5, 0.75, 1, 1.5, 2, 3]).forEach((t) => {
     const px = x(t);
     svg += `<line class="${t === 1 ? "ax-par" : "ax-line"}" x1="${px}" y1="${padT - 8}" x2="${px}" y2="${padT + rows.length * rowH}"/>`;
     svg += `<text class="ax-txt" x="${px}" y="${H - 12}" text-anchor="middle">${t}×</text>`;
@@ -243,7 +264,7 @@ function drawStrip() {
 }
 
 window.addEventListener("resize", () => {
-  if ($("#screen-evidence").classList.contains("is-active")) drawStrip();
+  if ($("#screen-evidence").classList.contains("is-active")) { drawStrip(); sizeBoard(); }
 });
 
 /* ---------------- 03 leaderboard ---------------- */
@@ -278,6 +299,26 @@ function renderBoard() {
   }).join("");
 
   $("#board").innerHTML = head + rows;
+  sizeBoard();
+}
+
+/* Show whole rows only, and say that the table scrolls. Runs when the
+   Evidence screen is visible, because hidden rows measure as zero height. */
+function sizeBoard() {
+  const wrap = $("#boardWrap");
+  const trs = $$("#board tr");
+  if (!wrap || trs.length < 2 || !trs[1].offsetHeight) return;
+  const VISIBLE = 11;
+  const headH = trs[0].offsetHeight, rowH = trs[1].offsetHeight;
+  const body = trs.length - 1;
+  wrap.style.maxHeight = body > VISIBLE ? `${headH + rowH * VISIBLE}px` : "";
+  const update = () => {
+    const atEnd = wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 2;
+    wrap.classList.toggle("has-more", body > VISIBLE && !atEnd);
+  };
+  wrap.onscroll = update;
+  update();
+  $("#boardHint").textContent = body > VISIBLE ? `${body} rows · scroll for more` : "";
 }
 
 /* ---------------- 04 gates ---------------- */
@@ -349,10 +390,21 @@ $("#probeBtn").addEventListener("click", async () => {
     const d = await r.json();
 
     if (d.mode !== "live") {
-      out.innerHTML = `<p class="live-err">Server not reachable${d.reason ? ` (${d.reason})` : ""}. ` +
-                      `Nothing measured — staying in replay.</p>`;
+      out.innerHTML = `<p class="live-err">${d.error ? d.error : `Server not reachable${d.reason ? ` (${d.reason})` : ""}. ` +
+                      `Nothing measured — staying in replay.`}</p>`;
     } else {
-      out.innerHTML = `<table>
+      renderProbe(d, "Measured on the demo host just now.");
+    }
+  } catch (e) {
+    out.innerHTML = `<p class="live-err">${e.message}</p>`;
+  } finally {
+    btn.disabled = STATUS.mode !== "live";
+    btn.textContent = "run measurement";
+  }
+});
+
+function renderProbe(d, when) {
+      $("#liveResult").innerHTML = `<table>
         <tr><td>model</td><td>${d.model}</td></tr>
         <tr><td>requests (concurrency)</td><td>${d.requests} (${d.concurrency} / cap ${d.max_workers})</td></tr>
         <tr><td>failed</td><td>${d.failed}</td></tr>
@@ -362,14 +414,7 @@ $("#probeBtn").addEventListener("click", async () => {
         <tr><td>mean output rate</td><td>${d.mean_output_tok_s === null ? "—" : d.mean_output_tok_s + " tok/s"}</td></tr>
         <tr><td>aggregate output rate</td><td>${d.aggregate_output_tok_s === null ? "—" : d.aggregate_output_tok_s + " tok/s"}</td></tr>
       </table>
-      <p class="caveat" style="margin-left:0;margin-right:0">Measured on this machine just now. ${d.measurement_note}</p>`;
-    }
-  } catch (e) {
-    out.innerHTML = `<p class="live-err">${e.message}</p>`;
-  } finally {
-    btn.disabled = STATUS.mode !== "live";
-    btn.textContent = "run measurement";
-  }
-});
+      <p class="caveat" style="margin-left:0;margin-right:0">${when} ${d.measurement_note || ""}</p>`;
+}
 
 boot();
